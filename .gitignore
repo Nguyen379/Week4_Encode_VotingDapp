@@ -1,0 +1,15 @@
+# Root-level gitignore
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Logs
+logs/
+*.log
+
+# Ignore environment variables (if you use a global .env)
+.env
+
+# Ignore npm debug logs
+npm-debug.log*
