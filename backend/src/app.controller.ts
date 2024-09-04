@@ -50,4 +50,9 @@ export class AppController {
   async mintTokens(@Body() body: MintTokenDto) {
     return { result: await this.appService.mintTokens(body) };
   }
+
+  @Get('check-votes')
+  async checkVotes() {
+    return { result: await this.appService.checkVotes() };
+  }
 }

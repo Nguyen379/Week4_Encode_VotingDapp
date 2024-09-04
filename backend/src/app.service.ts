@@ -11,7 +11,12 @@ import { sepolia } from 'viem/chains';
 import { privateKeyToAccount } from 'viem/accounts';
 import { MintTokenDto } from './dtos/mintToken.dto';
 import * as tokenJson from './assets/MyToken.json';
-// import * as ballotJson from './assets/TokenizedBallot.json';
+import * as ballotJson from './assets/TokenizedBallot.json';
+
+// interface Proposal {
+//   name: string;
+//   voteCount: string;
+// }
 
 @Injectable()
 export class AppService {
@@ -138,6 +143,28 @@ export class AppService {
         result: false,
         message: `Error minting tokens: ${error.message}`,
       };
+    }
+  }
+
+  async checkVotes() {
+    // TODO: fix [Nest] 6230  - 09/04/2024, 4:25:44 AM   ERROR [ExceptionsHandler] Cannot read properties of undefined (reading 'length')]
+    // const proposals: Proposal[];
+    for (let index = 0; index < 3; index++) {
+      console.log('asdfasdfsdafs1');
+      const proposal = (await this.publicClient.readContract({
+        address: this.getBallotAddress(),
+        ballotJson,
+        functionName: 'proposals',
+        args: [BigInt(index)],
+      })) as any[];
+      console.log('asdfasdfsdafs2');
+      console.log(
+        JSON.parse(
+          JSON.stringify(proposal, (k, v) =>
+            typeof v === 'bigint' ? v.toString() : v,
+          ),
+        ),
+      );
     }
   }
 }
