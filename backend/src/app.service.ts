@@ -6,17 +6,15 @@ import {
   formatEther,
   parseEther,
   createWalletClient,
+  hexToString,
 } from 'viem';
 import { sepolia } from 'viem/chains';
 import { privateKeyToAccount } from 'viem/accounts';
 import { MintTokenDto } from './dtos/mintToken.dto';
+import { SelfDelegate } from './dtos/selfDelegate.dto';
+import { VoteDto } from './dtos/vote.dto';
 import * as tokenJson from './assets/MyToken.json';
 import * as ballotJson from './assets/TokenizedBallot.json';
-
-// interface Proposal {
-//   name: string;
-//   voteCount: string;
-// }
 
 @Injectable()
 export class AppService {
@@ -147,24 +145,108 @@ export class AppService {
   }
 
   async checkVotes() {
-    // TODO: fix [Nest] 6230  - 09/04/2024, 4:25:44 AM   ERROR [ExceptionsHandler] Cannot read properties of undefined (reading 'length')]
-    // const proposals: Proposal[];
-    for (let index = 0; index < 3; index++) {
-      console.log('asdfasdfsdafs1');
-      const proposal = (await this.publicClient.readContract({
+    try {
+      const proposals: { name: string; voteCount: string }[] = [];
+      for (let index = 0; index < 3; index++) {
+        console.log(`Fetching proposal at index ${index}`);
+        const proposal = await this.publicClient.readContract({
+          address: this.getBallotAddress(),
+          abi: ballotJson.abi,
+          functionName: 'proposals',
+          args: [BigInt(index)],
+        });
+        const name = hexToString(proposal[0], { size: 32 });
+        const voteCount = formatEther(proposal[1].toString());
+        // const formattedProposal = JSON.parse(
+        //   JSON.stringify(proposal, (k, v) =>
+        //     typeof v !== null || typeof v !== undefined ? v.toString() : v,
+        //   ),
+        // );
+        // console.log('Format ether: ', formatEther(proposal[1]));
+        // console.log(
+        //   'Format ether with Number: ',
+        //   Number(formatEther(proposal[1])),
+        // );
+        // console.log(
+        //   'Format ether with Number * 1: ',
+        //   Number(formatEther(proposal[1])) * 1000000000000000000,
+        // );
+
+        console.log('Proposal:', { name, voteCount });
+        proposals.push({ name, voteCount });
+      }
+      return proposals;
+    } catch (error) {
+      console.error('Error in checkVotes:', error.message);
+      throw new Error(`Failed to fetch proposals: ${error.message}`);
+    }
+  }
+
+  async selfDelegate(body: SelfDelegate) {
+    const address = body.address;
+    try {
+      const delegateTx = await this.walletClient.writeContract({
+        address: this.getContractAddress(),
+        abi: tokenJson.abi,
+        functionName: 'delegate',
+        args: [address],
+      });
+
+      if (await this.getTransactionReceipt(delegateTx)) {
+        console.log(`Delegated ${address}`);
+        return {
+          result: true,
+          message: `Successfully delegated for ${address}`,
+          transactionHash: delegateTx,
+        };
+      } else {
+        return {
+          result: false,
+          message: `Failed to delegate for ${address}`,
+          transactionHash: delegateTx,
+        };
+      }
+    } catch (error) {
+      console.error('Error in selfDelegate:', error);
+      return {
+        result: false,
+        message: `Error delegating: ${error.message}`,
+      };
+    }
+  }
+
+  async vote(body: VoteDto) {
+    const { address, proposalId, amount } = body;
+    try {
+      const voteTx = await this.walletClient.writeContract({
         address: this.getBallotAddress(),
-        ballotJson,
-        functionName: 'proposals',
-        args: [BigInt(index)],
-      })) as any[];
-      console.log('asdfasdfsdafs2');
-      console.log(
-        JSON.parse(
-          JSON.stringify(proposal, (k, v) =>
-            typeof v === 'bigint' ? v.toString() : v,
-          ),
-        ),
-      );
+        abi: ballotJson.abi,
+        functionName: 'vote',
+        args: [BigInt(proposalId), parseEther(amount)],
+      });
+
+      if (await this.getTransactionReceipt(voteTx)) {
+        console.log(
+          `Vote cast for proposal ${proposalId} by ${address} with ${amount} votes`,
+        );
+        return {
+          result: true,
+          message: `Successfully cast ${amount} votes for proposal ${proposalId} by ${address}`,
+          transactionHash: voteTx,
+        };
+      } else {
+        return {
+          result: false,
+          message: `Failed to cast vote for proposal ${proposalId} by ${address}`,
+          transactionHash: voteTx,
+        };
+      }
+    } catch (error) {
+      console.error('Error in vote:', error);
+      return {
+        result: false,
+        message: `Error casting vote: ${error.message}`,
+      };
     }
   }
 }

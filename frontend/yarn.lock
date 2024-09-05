@@ -1311,6 +1311,7 @@
     dotenv "^16.0.3"
     envfile "^6.18.0"
     qrcode "^1.5.1"
+    usingtellor "^5.0.5"
 
 "@se-2/nextjs@file:/Users/nguyen/Downloads/Visual Studio Code/Week4_Encode_VotingDapp/frontend/packages/nextjs":
   version "0.1.0"

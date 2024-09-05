@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
-import "usingtellor/contractssingtellor/contracts/UsingTellor.sol";
-
+import "usingtellor/contracts/UsingTellor.sol";
 
 contract CallOracle is UsingTellor {
     constructor(address payable _tellorAddress) UsingTellor(_tellorAddress) {}
